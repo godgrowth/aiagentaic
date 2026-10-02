@@ -50,7 +50,7 @@ const openaiLike = (url, model) => async (msgs, key) => {
 const PROVIDERS = [
   { name: "gemini", key: () => process.env.GEMINI_API_KEY, call: gemini },
   { name: "groq", key: () => process.env.GROQ_API_KEY, call: openaiLike("https://api.groq.com/openai/v1/chat/completions", "llama-3.3-70b-versatile") },
-  { name: "mistral", key: () => process.env.MISTRAL_API_KEY, call: openaiLike("https://api.mistral.ai/v1/chat/completions", "mistral-small-latest") },
+  { name: "mistral", key: () => process.env.mstrl_OQYUKmMRWIa90h2TJVlPtMNliFJEl5Ti_3YXPfz, call: openaiLike("https://api.mistral.ai/v1/chat/completions", "mistral-small-latest") },
 ];
 
 module.exports = async (req, res) => {
