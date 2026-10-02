@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIC – Assistant virtuel SIREXE</title>
+<style>
+:root{
+  --bg:#0f1115; --panel:#171a21; --line:#262a33; --text:#e9ebf0; --muted:#8b92a0;
+  --red:#d92323; --amber:#ffa31a; --blue:#3b6cff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;display:flex;justify-content:center}
+.app{width:100%;max-width:820px;height:100%;display:flex;flex-direction:column}
+
+/* Header */
+header{display:flex;align-items:center;gap:20px;padding:20px 24px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#14171d,var(--bg))}
+.brand h1{font-size:1.25rem;font-weight:700;letter-spacing:.2px}
+.brand h1 span{color:var(--red)}
+.brand p{font-size:.85rem;color:var(--muted);margin-top:4px}
+.status{margin-top:8px;font-size:.78rem;color:var(--muted)}
+
+/* Orbe */
+.orb-wrap{position:relative;width:96px;height:96px;flex:none;display:grid;place-items:center}
+.orb{position:relative;width:70px;height:70px;border-radius:50%;
+  background:radial-gradient(circle at 32% 28%,#fff6 0,transparent 28%),
+             radial-gradient(circle at 65% 70%,var(--blue) 0,transparent 55%),
+             radial-gradient(circle,#7a1010 0,#2a0707 100%);
+  box-shadow:0 0 22px 4px #d9232355,0 0 40px 8px #3b6cff33, inset -8px -10px 18px #0009, inset 6px 6px 14px #ffffff22;
+  animation:float 5s ease-in-out infinite;transition:background .4s,box-shadow .4s}
+.orb::after{content:"";position:absolute;inset:-8px;border-radius:50%;border:1px solid #ffffff18;transform:rotateX(70deg)}
+.ring{position:absolute;inset:6px;border-radius:50%;border:2px solid var(--red);opacity:0;pointer-events:none}
+@keyframes float{0%,100%{transform:translateY(-4px)}50%{transform:translateY(4px)}}
+@keyframes blink{0%,100%{filter:brightness(1);transform:scale(1)}50%{filter:brightness(1.6);transform:scale(1.07)}}
+@keyframes wave{0%{transform:scale(.8);opacity:.9}100%{transform:scale(1.55);opacity:0}}
+@keyframes surge{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
+
+.orb.thinking{
+  background:radial-gradient(circle at 32% 28%,#fff8 0,transparent 28%),
+             radial-gradient(circle at 65% 70%,#ffc24d 0,transparent 60%),
+             radial-gradient(circle,#c46500 0,#4a2300 100%);
+  box-shadow:0 0 30px 8px #ffa31aaa,0 0 60px 14px #ff7a0044, inset -8px -10px 18px #0007, inset 6px 6px 14px #ffffff33;
+  animation:float 5s ease-in-out infinite,blink .55s ease-in-out infinite}
+.orb.speaking{
+  background:radial-gradient(circle at 32% 28%,#fff9 0,transparent 28%),
+             radial-gradient(circle at 60% 65%,#ff4a4a 0,transparent 60%),
+             radial-gradient(circle,#e01818 0,#5a0606 100%);
+  box-shadow:0 0 36px 12px #ff2a2acc,0 0 80px 22px #d9232366, inset -8px -10px 18px #0006, inset 6px 6px 14px #ffffff44;
+  animation:surge .9s ease-in-out infinite}
+.orb.speaking ~ .ring{animation:wave 1.4s ease-out infinite}
+.orb.speaking ~ .ring.r2{animation-delay:.7s}
+
+/* Chat */
+#chat{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
+.msg{display:flex;gap:10px;max-width:88%}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.avatar{flex:none;width:32px;height:32px;border-radius:8px;background:var(--red);color:#fff;font-size:.68rem;font-weight:800;display:grid;place-items:center;letter-spacing:.5px}
+.bubble{padding:12px 16px;border-radius:14px;line-height:1.55;font-size:.95rem;white-space:pre-wrap;word-wrap:break-word}
+.msg.ai .bubble{background:var(--panel);border:1px solid var(--line);border-top-left-radius:4px}
+.msg.user .bubble{background:#2a1214;border:1px solid #5a1c1f;border-top-right-radius:4px}
+.msg.err .bubble{border-color:var(--red);color:#ffb3b3}
+.dots span{display:inline-block;width:6px;height:6px;margin-right:4px;border-radius:50%;background:var(--amber);animation:blink .9s infinite}
+.dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
+
+/* Suggestions */
+#starters{display:flex;flex-wrap:wrap;gap:8px;padding:0 24px 12px}
+#starters button{background:transparent;border:1px solid var(--line);color:var(--text);padding:8px 14px;border-radius:999px;font-size:.84rem;cursor:pointer;transition:.2s}
+#starters button:hover:not(:disabled){border-color:var(--red);background:#d9232318}
+#starters button:disabled{opacity:.4;cursor:not-allowed}
+
+/* Saisie */
+.composer{display:flex;gap:10px;padding:14px 24px 22px;border-top:1px solid var(--line)}
+#input{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--text);padding:13px 16px;border-radius:12px;font-size:.95rem;outline:none}
+#input:focus{border-color:var(--red)}
+#send{background:var(--red);color:#fff;border:0;padding:0 24px;border-radius:12px;font-weight:700;font-size:.95rem;cursor:pointer;transition:.2s}
+#send:hover:not(:disabled){filter:brightness(1.15)}
+#send:disabled{background:#4a2224;color:#9a8a8a;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+@media (max-width:560px){header{padding:14px 16px}#chat{padding:16px}#starters,.composer{padding-left:16px;padding-right:16px}.orb-wrap{width:80px;height:80px}.orb{width:58px;height:58px}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="orb-wrap" aria-hidden="true">
+      <div class="orb idle" id="orb"></div>
+      <div class="ring"></div><div class="ring r2"></div>
+    </div>
+    <div class="brand">
+      <h1><span>AIC</span> · Application Industrielle de Caoutchouc</h1>
+      <p>Assistant virtuel du stand · SIREXE</p>
+      <div class="status" id="status">En attente de votre question</div>
+    </div>
+  </header>
+
+  <main id="chat" aria-live="polite"></main>
+
+  <div id="starters">
+    <button type="button">Vulcanisation sur site ?</button>
+    <button type="button">Bandes transporteuses</button>
+    <button type="button">Garnissage caoutchouc / PVC</button>
+    <button type="button">Demander un devis</button>
+  </div>
+
+  <div class="composer">
+    <input id="input" type="text" placeholder="Posez votre question à AIC…" autocomplete="off" aria-label="Votre message">
+    <button id="send" type="button">Envoyer</button>
+  </div>
+</div>
+
+<script>
+// ⚠️ Renseignez votre clé API Google Gemini ici.
+// Pour un salon, préférez un proxy serveur : une clé exposée côté navigateur est visible de tous.
+const GEMINI_API_KEY = "AQ.Ab8RN6KEZHbcVKgF6v_VJZfhnrmjYuNFey5HIpbpU7hfk60a-g";
+
+const SYSTEM_INSTRUCTION = `Tu es l'assistant virtuel expert du stand d'AIC (Application Industrielle de Caoutchouc) au salon SIREXE.
+Missions : présenter les services clés d'AIC — bandes transporteuses, garnissage caoutchouc/PVC, rouleaux, joints, et maintenance / vulcanisation à chaud et à froid sur sites industriels et miniers.
+Règles :
+- Réponds en français, en 2 à 3 phrases MAXIMUM, de façon concise.
+- Ton ultra-professionnel, courtois et dynamique (B2B).
+- Ne promets ni prix, ni délai précis : un ingénieur les confirmera.
+- Termine SYSTÉMATIQUEMENT ta réponse en proposant au visiteur d'échanger avec un ingénieur présent sur le stand ou de laisser ses coordonnées (Nom, Entreprise, Téléphone/WhatsApp).`;
+
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+const orb = document.getElementById("orb");
+const statusEl = document.getElementById("status");
+const chat = document.getElementById("chat");
+const input = document.getElementById("input");
+const sendBtn = document.getElementById("send");
+const starterBtns = document.querySelectorAll("#starters button");
+
+const STATUS = {idle:"En attente de votre question", thinking:"AIC réfléchit…", speaking:"AIC vous répond"};
+const history = []; // {role:"user"|"model", parts:[{text}]}
+let busy = false;
+
+function setOrbState(state){
+  orb.classList.remove("idle","thinking","speaking");
+  orb.classList.add(state);
+  statusEl.textContent = STATUS[state] || "";
+}
+
+function addMessage(role, text, extra=""){
+  const wrap = document.createElement("div");
+  wrap.className = `msg ${role} ${extra}`;
+  if(role === "ai"){
+    const av = document.createElement("div");
+    av.className = "avatar"; av.textContent = "AIC";
+    wrap.appendChild(av);
+  }
+  const b = document.createElement("div");
+  b.className = "bubble"; b.textContent = text;
+  wrap.appendChild(b);
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+  return b;
+}
+
+function setBusy(v){
+  busy = v;
+  sendBtn.disabled = v; input.disabled = v;
+  starterBtns.forEach(b => b.disabled = v);
+  if(!v) input.focus();
+}
+
+async function typewrite(el, text){
+  el.textContent = "";
+  for(let i = 0; i < text.length; i += 2){
+    el.textContent = text.slice(0, i + 2);
+    chat.scrollTop = chat.scrollHeight;
+    await new Promise(r => setTimeout(r, 14));
+  }
+  el.textContent = text;
+}
+
+async function askGemini(){
+  const res = await fetch(GEMINI_URL, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      systemInstruction: {parts: [{text: SYSTEM_INSTRUCTION}]},
+      contents: history,
+      generationConfig: {temperature: 0.7, maxOutputTokens: 400, thinkingConfig: {thinkingBudget: 0}}
+    })
+  });
+  if(!res.ok){
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e?.error?.message || `Erreur HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("").trim();
+  if(!text) throw new Error("Réponse vide de l'API.");
+  return text;
+}
+
+async function sendMessage(text){
+  text = (text || "").trim();
+  if(!text || busy) return;
+  setBusy(true);
+  input.value = "";
+  addMessage("user", text);
+  history.push({role: "user", parts: [{text}]});
+
+  setOrbState("thinking");
+  const bubble = addMessage("ai", "");
+  bubble.innerHTML = '<span class="dots"><span></span><span></span><span></span></span>';
+
+  try{
+    const answer = await askGemini();
+    history.push({role: "model", parts: [{text: answer}]});
+    setOrbState("speaking");
+    await typewrite(bubble, answer);
+  }catch(err){
+    history.pop(); // retire la question échouée de l'historique
+    bubble.parentElement.classList.add("err");
+    bubble.textContent = "Désolé, une erreur est survenue : " + err.message +
+      ". Un ingénieur sur le stand se fera un plaisir de vous répondre directement.";
+  }finally{
+    setOrbState("idle");
+    setBusy(false);
+  }
+}
+
+sendBtn.addEventListener("click", () => sendMessage(input.value));
+input.addEventListener("keydown", e => { if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); sendMessage(input.value); }});
+starterBtns.forEach(b => b.addEventListener("click", () => sendMessage(b.textContent)));
+
+addMessage("ai", "Bienvenue sur le stand AIC au SIREXE ! Bandes transporteuses, garnissage caoutchouc/PVC, rouleaux, joints, vulcanisation sur site : comment pouvons-nous vous aider ?");
+setOrbState("idle");
+</script>
+</body>
+</html>
